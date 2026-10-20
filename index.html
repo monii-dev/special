@@ -1,837 +1,405 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>음악 수행평가 대비</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>11월 3일을 맞춰라!</title>
 <style>
+:root{--ink:#f7f8fc;--muted:#b9c5d8}
 *{box-sizing:border-box}
-:root{color-scheme:dark}
-body{margin:0;background:#101114;color:#f6f7fb;font-family:Arial,"Noto Sans KR",sans-serif}
-button,input{font:inherit}
-button{border:0;cursor:pointer;color:inherit}
-button:focus-visible,input:focus-visible{outline:3px solid #7ca5ff;outline-offset:2px}
-#app{width:min(940px,94%);margin:0 auto;padding:28px 0 60px}
-.screen{display:none}.screen.active{display:block}
-h1{text-align:center;margin:0 0 28px}.menu{display:grid;gap:14px}
-.menu button,.primary,.secondary,.back{border-radius:14px;padding:15px 20px}
-.menu button{padding:24px;font-size:20px}
-.primary{background:#4b7bec}.secondary,.back{background:#30333a}.back{margin-bottom:18px}
-.muted{color:#aeb3bf}.hint{font-size:13px;color:#9ba1ae}
+html,body{width:100%;height:100%;margin:0;overflow:hidden}
+body{min-height:100dvh;background:#0b1220;color:var(--ink);font-family:system-ui,-apple-system,"Noto Sans KR",sans-serif;touch-action:manipulation}
+.app,.stage{width:100%;height:100dvh}
+header,.controls,.rules,.progress-wrap{display:none!important}
+button{border:1px solid #ffffff35;border-radius:999px;padding:11px 18px;background:#ffffff0d;color:#fff;font:700 14px system-ui;cursor:pointer}
+button.primary{background:#edf6ff;color:#14243b;border-color:#edf6ff}
 
-/* quiz flow */
-.flow-stage{position:relative;overflow:hidden;transition:height .34s ease}
-.flow-panel{width:100%}
-.flow-panel.is-hidden{display:none}
-.flow-panel.exit-left{position:absolute;inset:0 auto auto 0;animation:slideOutLeft .34s ease forwards;pointer-events:none}
-.flow-panel.enter-right{animation:slideInRight .34s ease forwards}
-@keyframes slideOutLeft{from{transform:translateX(0);opacity:1}to{transform:translateX(-105%);opacity:.25}}
-@keyframes slideInRight{from{transform:translateX(105%);opacity:.3}to{transform:translateX(0);opacity:1}}
-@media(prefers-reduced-motion:reduce){.flow-stage{transition:none}.flow-panel.exit-left,.flow-panel.enter-right{animation:none}}
-.card{background:#1b1d22;border:1px solid #2b2e36;border-radius:18px;padding:20px}
-.question-card{text-align:center;padding:26px 20px}
-.question-card p{margin-top:0;color:#c9cdd6}
-.answer-input{width:100%;margin:18px 0 12px;padding:15px 16px;border:1px solid #424650;border-radius:12px;background:#111318;color:#fff;font-size:18px}
-.question-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
-.icon-btn{width:58px;height:58px;border-radius:50%;background:#4b7bec;font-size:25px;display:inline-flex;align-items:center;justify-content:center}
-.check-btn{min-width:120px;border-radius:13px;padding:14px 22px;background:#4b7bec;font-weight:700}
-.result-title.correct{color:#67e68d}.result-title.wrong{color:#ff7979}
-.answer-head{margin-bottom:16px}.answer-head h2{margin:0 0 8px}.answer-head p{margin:0}
-.feature{margin-top:18px;color:#d3d6dd;line-height:1.65}.feature b{color:#fff}
-.next-row{display:flex;justify-content:flex-end;margin-top:18px}.next-btn{border-radius:13px;padding:14px 24px;background:#4b7bec;font-weight:700}
+.stage{
+ position:fixed;inset:0;isolation:isolate;overflow:hidden;
+ background:linear-gradient(160deg,#91c5e7,#f0d7b6 65%,#789b7b);
+ transition:background 2.5s ease;
+}
+.stage:before{
+ content:"";position:absolute;inset:0;z-index:-1;
+ background:linear-gradient(180deg,#07162b22,#07162b00 45%,#07162b55);
+ pointer-events:none;
+}
+.sky-sun{
+ position:absolute;right:12%;top:12%;width:70px;height:70px;
+ border-radius:50%;background:#fff1bd;
+ box-shadow:0 0 60px #fff0bdaa;
+ transition:background 2.5s ease,box-shadow 2.5s ease,opacity 2.5s ease;
+}
+.cloud{
+ position:absolute;top:27%;left:-120px;width:110px;height:30px;
+ border-radius:50px;background:#ffffffa6;
+ animation:cloud 24s linear infinite;
+ transition:background 2.5s ease;
+}
+.cloud:before,.cloud:after{
+ content:"";position:absolute;background:inherit;border-radius:50%;bottom:5px
+}
+.cloud:before{width:43px;height:43px;left:18px}
+.cloud:after{width:34px;height:34px;left:56px}
+@keyframes cloud{to{left:110%}}
 
-/* player */
-.segment-player{margin-top:12px}
-.video-box{position:relative;background:#000;border-radius:15px 15px 0 0;overflow:hidden;min-height:120px}
-.video-box video{display:block;width:100%;max-height:520px;background:#000}
-.ended-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,.68);opacity:0;pointer-events:none;transition:opacity .28s ease}
-.ended-overlay.show{opacity:1;pointer-events:auto}
-.replay-overlay-btn{border-radius:999px;padding:14px 22px;background:rgba(30,32,38,.94);border:1px solid rgba(255,255,255,.25);font-weight:800;font-size:17px}
-.player-controls{display:grid;grid-template-columns:52px auto 1fr;gap:10px;align-items:center;padding:10px 12px;background:#17191e;border-radius:0 0 15px 15px}
-.player-toggle{width:44px;height:44px;border-radius:50%;background:#30343c;font-size:20px}
-.player-time{font-variant-numeric:tabular-nums;white-space:nowrap;color:#e4e6eb;font-size:14px}
-.player-seek{width:100%;accent-color:#6f98ff}
-.jump-row{display:flex;justify-content:flex-end;margin-top:9px}
-.jump-question{border-radius:10px;padding:10px 14px;background:#30343c;border:1px solid #464b56;font-weight:700}
+.hills{position:absolute;bottom:0;width:100%;height:35%;z-index:-1}
+.hill1,.hill2{transition:fill 2.5s ease}
+.hill1{fill:#76a77c}
+.hill2{fill:#346d58}
 
-/* listen */
-.instrument-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
-.instrument-list button{padding:16px;border-radius:12px;background:#23262c;text-align:left}
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.84);display:none;align-items:center;justify-content:center;padding:14px;z-index:50}
-.modal.active{display:flex}
-.modal-box{position:relative;width:min(880px,100%);max-height:94vh;overflow-y:auto;background:#181a1f;border-radius:18px;padding:20px}
-.close{position:absolute;top:10px;right:10px;width:44px;height:44px;border-radius:50%;background:#30333a;font-size:26px;z-index:3}
-#listenName{padding-right:52px;margin:0 0 10px}
-
-.error{padding:14px;border-radius:12px;background:#4a2424;color:#ffd5d5;margin-bottom:16px;display:none}
-@media(max-width:600px){
-  .instrument-list{grid-template-columns:1fr}
-  .player-controls{grid-template-columns:48px 1fr}.player-time{grid-column:2}.player-seek{grid-column:1/-1}
-  .next-row{justify-content:stretch}.next-btn{width:100%}
-  .question-player-actions{display:flex;align-items:center;justify-content:center;gap:10px;margin:14px 0}
-  .icon-btn svg{width:26px;height:26px;display:block;pointer-events:none;user-select:none}
-  .icon-btn{-webkit-user-select:none;user-select:none}
+.date-wrap{
+ position:absolute;inset:0;display:flex;align-items:center;
+ justify-content:center;padding:18px 12px;text-align:center;
+}
+.date-big{
+ font-size:clamp(78px,17vw,172px);font-weight:950;
+ line-height:.95;letter-spacing:-.085em;color:white;
+ text-shadow:0 5px 0 #18283a55,0 12px 32px #12223866;
+ font-variant-numeric:tabular-nums;white-space:nowrap;
+}
+.date-big .md{display:block}
+.date-big .slash{color:#fff9;margin:0 .04em}
+.date-big .day{color:#fff1bd}
+.date-label{
+ margin-top:18px;font-size:clamp(14px,2.3vw,19px);
+ font-weight:750;letter-spacing:.04em;color:#fff;
+ text-shadow:0 2px 8px #14253a88;
+ line-height:1.7;
+}
+.brand-label{
+ position:absolute;top:18px;left:20px;z-index:3;
+ padding:9px 13px;border-radius:13px;background:#14243b66;
+ border:1px solid #ffffff66;font-size:clamp(11px,2.5vw,14px);
+ font-weight:750;letter-spacing:-.02em;backdrop-filter:blur(8px);
+ color:#fff;box-shadow:0 5px 18px #14243b18;
+}
+.brand-label strong{
+ display:inline-block;margin-left:4px;font-size:1.35em;
+ font-weight:1000;letter-spacing:.06em;color:#fff1a8;
+ text-shadow:0 0 12px #ffe89a77;
 }
 
+/* 기념일 알림 */
+.special-toast{
+ position:absolute;z-index:3;left:50%;bottom:30px;
+ transform:translate(-50%,18px);opacity:0;pointer-events:none;
+ padding:11px 18px;border-radius:999px;background:#fff5d9;
+ color:#203047;font-weight:850;font-size:clamp(14px,2.5vw,19px);
+ box-shadow:0 8px 30px #0004;white-space:nowrap;
+ transition:opacity .4s,transform .4s;
+}
+.special-toast.visible{opacity:1;transform:translate(-50%,0)}
+
+.overlay{
+ position:absolute;inset:0;z-index:5;display:none;place-items:center;
+ padding:24px;background:#0b1424d9;backdrop-filter:blur(9px);
+ text-align:center;
+}
+.overlay.show{display:grid;animation:result-pop .4s cubic-bezier(.16,1,.3,1) both}
+.dialog{max-width:460px}
+.dialog .emoji{font-size:58px}
+.dialog h2{font-size:clamp(34px,7vw,56px);margin:6px 0 10px;letter-spacing:-.06em}
+.dialog p{color:#d6deeb;line-height:1.8;margin:0 0 20px}
+.dialog.success h2{color:#a8efc0}
+.dialog.fail h2{color:#ffb1b9}
+.dialog.timeout h2{color:#ffe3a2}
+
+.stage:after{
+ content:"";position:absolute;inset:0;z-index:4;pointer-events:none;
+ background:#050914;opacity:0;transition:opacity .7s ease;
+}
+.stage.transition-dark:after{opacity:.97}
+.stage.transition-bright:after{opacity:0;transition-duration:1.2s}
+.stage.transition-bright .date-wrap{
+ animation:date-arrive .8s cubic-bezier(.2,.8,.2,1) both;
+}
+@keyframes date-arrive{
+ 0%{opacity:0;transform:scale(.94);filter:brightness(1.8)}
+ 65%{opacity:1;transform:scale(1.025);filter:brightness(1.2)}
+ 100%{opacity:1;transform:scale(1);filter:brightness(1)}
+}
+@keyframes result-pop{
+ 0%{opacity:0;transform:scale(.9);filter:blur(7px)}
+ 70%{opacity:1;transform:scale(1.025);filter:blur(0)}
+ 100%{opacity:1;transform:scale(1);filter:blur(0)}
+}
+.overlay.show .dialog{animation:dialog-pop .45s cubic-bezier(.16,1,.3,1) both}
+@keyframes dialog-pop{
+ 0%{opacity:0;transform:translateY(22px) scale(.9)}
+ 70%{opacity:1;transform:translateY(-3px) scale(1.02)}
+ 100%{opacity:1;transform:translateY(0) scale(1)}
+}
+.intro{
+ position:absolute;inset:0;z-index:6;display:grid;place-items:center;
+ text-align:center;padding:24px;background:#0914269c;
+ backdrop-filter:blur(2px);transition:opacity .45s,visibility .45s;
+}
+.intro.hidden{opacity:0;visibility:hidden;pointer-events:none}
+.intro-card{
+ width:min(460px,100%);padding:28px 22px;
+ border:1px solid #ffffff55;border-radius:28px;
+ background:#101d30a8;box-shadow:0 18px 70px #0004;
+ animation:dialog-pop .6s both;
+}
+.intro-kicker{font-size:11px;letter-spacing:.22em;color:#b9dfff;font-weight:900}
+.intro h2{font-size:clamp(34px,8vw,62px);line-height:1.08;letter-spacing:-.065em;margin:12px 0}
+.intro p{color:#dbe5f2;line-height:1.8;font-size:14px;margin:0 0 22px}
+.intro button,.dialog button{font-size:15px;padding:13px 24px;min-width:150px}
+#stopAnywhere{
+ position:absolute;inset:0;z-index:2;border:0;border-radius:0;
+ background:transparent;padding:0;width:100%;height:100%;display:none;
+}
+.stage.running #stopAnywhere{display:block}
+
+@media(max-width:560px){
+ .sky-sun{width:48px;height:48px}
+ .brand-label{top:12px;left:12px;padding:8px 10px}
+ .date-big{font-size:clamp(66px,18vw,120px)}
+ .intro-card{padding:25px 18px}
+}
+@media(prefers-reduced-motion:reduce){
+ .stage,.hill1,.hill2,.sky-sun,.cloud{transition-duration:.01ms}
+}
 </style>
 </head>
 <body>
-<div id="app">
-  <div id="dataError" class="error"></div>
+<main class="app">
+<section class="stage" id="stage">
+  <div class="sky-sun" id="sun"></div>
+  <div class="cloud"></div>
 
-  <section id="home" class="screen active">
-    <h1>🎵 국악기 소리 맞히기</h1>
-    <div class="menu">
-      <button id="startQuiz" class="primary">문제 풀기</button>
-      <button id="openListen" class="secondary">들어보기</button>
-    </div>
-  </section>
+  <svg class="hills" viewBox="0 0 900 250" preserveAspectRatio="none" aria-hidden="true">
+    <path id="hill1" class="hill1" d="M0 160 Q110 80 240 145 T500 120 T740 135 T900 90 L900 250 L0 250Z"/>
+    <path id="hill2" class="hill2" d="M0 190 Q120 125 260 175 T510 150 T760 170 T900 140 L900 250 L0 250Z"/>
+  </svg>
 
-  <section id="quiz" class="screen">
-    <button class="back" data-home>← 처음으로</button>
-    <h1>소리 맞히기</h1>
+  <div class="brand-label">내포중학교 학생회 <strong>온율</strong></div>
 
-    <div id="flowStage" class="flow-stage">
-      <section id="questionPanel" class="flow-panel">
-        <div class="card question-card">
-          <p>소리만 듣고 악기를 맞혀 보세요.</p>
-          <div class="question-player-actions" aria-label="문제 소리 제어">
-            <button id="questionPlay" class="icon-btn" type="button" aria-label="문제 소리 재생"></button>
-            <button id="questionRestart" class="icon-btn" type="button" aria-label="문제 소리 처음부터 다시 재생"></button>
-          </div>
-          <input id="answerInput" class="answer-input" type="text" placeholder="악기 이름 입력" autocomplete="off">
-          <div class="question-actions">
-            <button id="checkAnswer" class="check-btn" type="button">확인</button>
-          </div>
-          <div class="hint" style="margin-top:12px">Enter 키로도 정답을 확인할 수 있습니다.</div>
-        </div>
-      </section>
-
-      <section id="answerPanel" class="flow-panel is-hidden">
-        <div class="card">
-          <div class="answer-head">
-            <h2 id="resultTitle" class="result-title"></h2>
-            <p>정답: <strong id="correctAnswer"></strong></p>
-          </div>
-
-          <div class="segment-player">
-            <div class="video-box">
-              <video id="answerVideo" src="./main.mp4" playsinline preload="metadata"></video>
-              <div id="answerEnded" class="ended-overlay">
-                <button id="answerReplay" class="replay-overlay-btn" type="button">↻ 다시보기</button>
-              </div>
-            </div>
-            <div class="player-controls">
-              <button id="answerPlay" class="player-toggle" type="button" aria-label="정답 영상 재생">▶️</button>
-              <span id="answerTime" class="player-time">0:00 / 0:00</span>
-              <input id="answerSeek" class="player-seek" type="range" min="0" max="0" value="0" step="0.01" aria-label="정답 영상 재생 위치">
-            </div>
-            <div class="jump-row">
-              <button id="answerJump" class="jump-question" type="button">🔊 소리 바로 듣기</button>
-            </div>
-          </div>
-
-          <div class="feature"><b>특징</b><p id="resultFeature"></p></div>
-          <div class="next-row"><button id="nextQuestion" class="next-btn" type="button">다음 →</button></div>
-          <div class="hint" style="text-align:right;margin-top:10px">Enter 키로 다음 문제로 넘어갈 수 있습니다.</div>
-        </div>
-      </section>
-    </div>
-  </section>
-
-  <section id="listen" class="screen">
-    <button class="back" data-home>← 처음으로</button>
-    <h1>국악기 들어보기</h1>
-    <div id="instrumentList" class="instrument-list"></div>
-  </section>
-</div>
-
-<div id="listenModal" class="modal" aria-hidden="true">
-  <div class="modal-box">
-    <button id="closeListen" class="close" type="button" aria-label="닫기">×</button>
-    <h2 id="listenName"></h2>
-
-    <div class="segment-player">
-      <div class="video-box">
-        <video id="listenVideo" src="./main.mp4" playsinline preload="metadata"></video>
-        <div id="listenEnded" class="ended-overlay">
-          <button id="listenReplay" class="replay-overlay-btn" type="button">↻ 다시보기</button>
-        </div>
+  <div class="date-wrap">
+    <div>
+      <div class="date-big" id="dateBig">
+        <span class="md"><span>01</span><span class="slash">.</span><span class="day">01</span></span>
       </div>
-      <div class="player-controls">
-        <button id="listenPlay" class="player-toggle" type="button" aria-label="영상 재생">▶️</button>
-        <span id="listenTime" class="player-time">0:00 / 0:00</span>
-        <input id="listenSeek" class="player-seek" type="range" min="0" max="0" value="0" step="0.01" aria-label="영상 재생 위치">
-      </div>
-      <div class="jump-row">
-        <button id="listenJump" class="jump-question" type="button">🔊 소리 바로 듣기</button>
-      </div>
+      <div class="date-label" id="dateLabel">시작 버튼을 눌러 시간 흐름 시작</div>
     </div>
-
-    <div class="feature"><b>특징</b><p id="listenFeature"></p></div>
   </div>
-</div>
 
-<script src="./plan.js"></script>
+  <div class="special-toast" id="specialToast" aria-live="polite"></div>
+  <button id="stopAnywhere" aria-label="화면을 눌러 날짜 멈추기"></button>
+
+  <div class="intro" id="intro">
+    <div class="intro-card">
+      <div class="intro-kicker">DATE TIMING GAME</div>
+      <h2>11월 3일을<br>맞춰라!</h2>
+      <p>날짜가 빠르게 흘러가.<br>2026년 11월 3일이라고 생각되는 순간<br>화면 아무 곳이나 눌러 멈춰!</p>
+      <button class="primary" id="start">▶ 시작하기</button>
+    </div>
+  </div>
+
+  <div class="overlay" id="overlay">
+    <div class="dialog" id="dialog">
+      <div class="emoji" id="emoji">🏁</div>
+      <h2 id="resultTitle">게임 종료</h2>
+      <p id="resultText"></p>
+      <button class="primary" id="again">다시 도전하기</button>
+    </div>
+  </div>
+</section>
+</main>
+
 <script>
-(() => {
-  'use strict';
-
-  const $ = id => document.getElementById(id);
-  const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-  const screens = [...document.querySelectorAll('.screen')];
-  const home = $('home');
-  const quiz = $('quiz');
-  const listen = $('listen');
-  const flowStage = $('flowStage');
-  const questionPanel = $('questionPanel');
-  const answerPanel = $('answerPanel');
-  const answerInput = $('answerInput');
-  const questionPlay = $('questionPlay');
-
-  const rawData = window.PLAN_DATA;
-  let normalItems = [];
-  let allItems = [];
-  let current = null;
-  let questionPlaying = false;
-  let questionEnd = 0;
-  let questionRAF = 0;
-  let transitionBusy = false;
-
-  // 문제는 화면 없이 MP4 하나만 사용해 소리만 재생한다.
-  const questionMedia = document.createElement('video');
-  questionMedia.src = './main.mp4';
-  questionMedia.preload = 'metadata';
-  questionMedia.playsInline = true;
-
-  function showError(message) {
-    const box = $('dataError');
-    box.textContent = message;
-    box.style.display = 'block';
-  }
-
-  function showScreen(id) {
-    stopQuestionSound();
-    answerPlayer.pause();
-    listenPlayer.pause();
-    screens.forEach(s => s.classList.toggle('active', s.id === id));
-  }
-
-  function numberOrNull(value) {
-    const n = Number(value);
-    return Number.isFinite(n) ? n : null;
-  }
-
-  function validRange(start, end) {
-    return Number.isFinite(start) && Number.isFinite(end) && end > start;
-  }
-
-  function normalize(text) {
-    return String(text ?? '')
-      .trim()
-      .replace(/\s+/g, '')
-      .toLowerCase();
-  }
-
-  // 동시 연주 악기용 정규화.
-  // 공백, 쉼표, 가운뎃점, 슬래시, +, &, '와/과' 같은 연결 표기를 무시한다.
-  // 예: "소금,    대금" / "소금 대금" / "소금·대금" / "소금대금" -> "소금대금"
-  function normalizeCombined(text) {
-    return String(text ?? '')
-      .trim()
-      .toLowerCase()
-      .replace(/(?:와|과)/g, '')
-      .replace(/[\s,，·ㆍ/＋+&＆]+/g, '');
-  }
-
-  // 아쟁(대아쟁) -> 전체 / 괄호 밖 / 괄호 안 모두 정답.
-  function acceptedNames(name) {
-    const raw = String(name ?? '').trim();
-    const set = new Set();
-    if (!raw) return [];
-
-    set.add(normalize(raw));
-
-    const paren = raw.match(/^(.+?)\((.+?)\)$/);
-    if (paren) {
-      if (paren[1].trim()) set.add(normalize(paren[1]));
-      if (paren[2].trim()) set.add(normalize(paren[2]));
-    }
-
-    return [...set];
-  }
-
-  function answerMatches(input, item) {
-    const user = normalize(input);
-    if (!user) return false;
-
-    // 여러 악기를 동시에 맞혀야 하는 항목.
-    // combined_names가 있으면 구성 악기 전체를 적어야 하며 구분자/공백만 자유롭다.
-    if (Array.isArray(item.combinedNames) && item.combinedNames.length > 1) {
-      const expected = normalizeCombined(item.combinedNames.join(''));
-      const typed = normalizeCombined(input);
-      if (typed === expected) return true;
-
-      // 명시적으로 추가한 별칭은 그대로 허용한다.
-      return (item.aliases || []).some(alias => normalizeCombined(alias) === typed);
-    }
-
-    if (acceptedNames(item.name).includes(user)) return true;
-
-    // plan.js의 aliases에 적힌 이름도 정답으로 인정한다.
-    return (item.aliases || []).some(alias => normalize(alias) === user);
-  }
-
-  function makeNormalItem(item) {
-    const qStart = numberOrNull(item.question_start ?? item.start);
-    const qEnd = numberOrNull(item.question_end ?? item.end);
-    if (!validRange(qStart, qEnd)) return null;
-
-    let answerParts = [];
-
-    // 여러 구간을 하나의 정답 영상처럼 이어 붙일 수 있다.
-    // 향피리는 [공통 설명, 향피리 소리] 두 구간을 사용한다.
-    if (Array.isArray(item.answer_parts)) {
-      answerParts = item.answer_parts
-        .map(part => ({
-          start: numberOrNull(part.start),
-          end: numberOrNull(part.end)
-        }))
-        .filter(part => validRange(part.start, part.end));
-    }
-
-    if (!answerParts.length) {
-      const aStart = numberOrNull(item.answer_start ?? item.start);
-      const aEnd = numberOrNull(item.answer_end ?? item.end);
-      if (!validRange(aStart, aEnd)) return null;
-      answerParts = [{ start: aStart, end: aEnd }];
-    }
-
-    return {
-      kind: 'normal',
-      name: item.name,
-      aliases: Array.isArray(item.aliases) ? item.aliases : [],
-      combinedNames: Array.isArray(item.combined_names) ? item.combined_names.filter(Boolean) : [],
-      feature: item.feature || '',
-      questionStart: qStart,
-      questionEnd: qEnd,
-      answerParts
-    };
-  }
-
-  function prepareData() {
-    if (!rawData) {
-      showError('plan.js를 불러오지 못했습니다. 이 HTML과 같은 폴더에 plan.js와 main.mp4를 넣어 주세요.');
-      return;
-    }
-
-    // 새 구조와 예전 배열 구조를 모두 읽는다.
-    const sourceNormal = Array.isArray(rawData)
-      ? rawData
-      : (Array.isArray(rawData.instruments) ? rawData.instruments : []);
-
-    normalItems = sourceNormal.map(makeNormalItem).filter(Boolean);
-    allItems = [...normalItems];
-
-    if (!allItems.length) showError('출제 가능한 구간이 없습니다. plan.js의 구간을 확인해 주세요.');
-  }
-
-  function formatTime(sec) {
-    sec = Math.max(0, Number(sec) || 0);
-    const minutes = Math.floor(sec / 60);
-    const seconds = Math.floor(sec % 60);
-    const tenth = Math.floor((sec - Math.floor(sec)) * 10);
-    return `${minutes}:${String(seconds).padStart(2, '0')}.${tenth}`;
-  }
-
-  function waitMetadata(media) {
-    if (media.readyState >= 1 && Number.isFinite(media.duration)) return Promise.resolve();
-    return new Promise((resolve, reject) => {
-      const ok = () => { cleanup(); resolve(); };
-      const bad = () => { cleanup(); reject(new Error('main.mp4를 불러오지 못했습니다.')); };
-      const cleanup = () => {
-        media.removeEventListener('loadedmetadata', ok);
-        media.removeEventListener('error', bad);
-      };
-      media.addEventListener('loadedmetadata', ok, { once: true });
-      media.addEventListener('error', bad, { once: true });
-      media.load();
-    });
-  }
-
-  async function seekMedia(media, time) {
-    await waitMetadata(media);
-    const safe = Math.max(0, Math.min(Number(time) || 0, Math.max(0, media.duration - 0.01)));
-    if (Math.abs(media.currentTime - safe) < 0.04) return;
-    await new Promise(resolve => {
-      let done = false;
-      const finish = () => {
-        if (done) return;
-        done = true;
-        media.removeEventListener('seeked', finish);
-        resolve();
-      };
-      media.addEventListener('seeked', finish, { once: true });
-      media.currentTime = safe;
-      setTimeout(finish, 500);
-    });
-  }
-
-  const ICON_PLAY = `
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path fill="currentColor" d="M8 5.14v13.72c0 .78.86 1.26 1.53.85l10.2-6.86a1.02 1.02 0 0 0 0-1.7L9.53 4.29A1.02 1.02 0 0 0 8 5.14Z"/>
-    </svg>`;
-
-  const ICON_PAUSE = `
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path fill="currentColor" d="M7 5h3v14H7zm7 0h3v14h-3z"/>
-    </svg>`;
-
-  const ICON_RESTART = `
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-      <path fill="currentColor" d="M12 5a7 7 0 1 1-6.32 10H8a5 5 0 1 0 1.17-5.22L7 12H3V8l2.72 2.72A6.97 6.97 0 0 1 12 5Z"/>
-    </svg>`;
-
-  function updateQuestionButton() {
-    questionPlay.innerHTML = questionPlaying ? ICON_PAUSE : ICON_PLAY;
-    questionPlay.setAttribute('aria-label', questionPlaying ? '문제 소리 일시정지' : '문제 소리 재생');
-  }
-
-  function stopQuestionSound(reset = false) {
-    cancelAnimationFrame(questionRAF);
-    questionMedia.pause();
-    questionPlaying = false;
-    if (reset && current) {
-      questionMedia.currentTime = current.questionStart;
-    }
-    updateQuestionButton();
-  }
-
-  function monitorQuestion() {
-    cancelAnimationFrame(questionRAF);
-    const tick = () => {
-      if (!questionPlaying) return;
-      if (questionMedia.currentTime >= questionEnd - 0.025) {
-        questionMedia.pause();
-        questionPlaying = false;
-        updateQuestionButton();
-        return;
-      }
-      questionRAF = requestAnimationFrame(tick);
-    };
-    questionRAF = requestAnimationFrame(tick);
-  }
-
-  async function toggleQuestionSound() {
-    if (!current || transitionBusy) return;
-
-    if (questionPlaying) {
-      questionMedia.pause();
-      questionPlaying = false;
-      updateQuestionButton();
-      return;
-    }
-
-    try {
-      await waitMetadata(questionMedia);
-      // 일시정지가 아니라 끝까지 갔거나 범위를 벗어났으면 처음부터 다시 재생.
-      if (
-        questionMedia.currentTime < current.questionStart - 0.05 ||
-        questionMedia.currentTime >= current.questionEnd - 0.05
-      ) {
-        await seekMedia(questionMedia, current.questionStart);
-      }
-      questionEnd = current.questionEnd;
-      await questionMedia.play();
-      questionPlaying = true;
-      updateQuestionButton();
-      monitorQuestion();
-    } catch (e) {
-      showError('문제 소리를 재생하지 못했습니다. main.mp4 파일을 확인해 주세요.');
-    }
-  }
-
-  async function restartQuestionSound() {
-    if (!current) return;
-    try {
-      cancelAnimationFrame(questionRAF);
-      questionMedia.pause();
-      questionPlaying = false;
-      await waitMetadata(questionMedia);
-      await seekMedia(questionMedia, current.questionStart);
-      questionEnd = current.questionEnd;
-      await questionMedia.play();
-      questionPlaying = true;
-      updateQuestionButton();
-      monitorQuestion();
-    } catch (e) {
-      showError('문제 소리를 재생하지 못했습니다. main.mp4 파일을 확인해 주세요.');
-    }
-  }
-
-  class SegmentPlayer {
-    constructor({video, playButton, seek, time, ended, replay}) {
-      this.video = video;
-      this.playButton = playButton;
-      this.seek = seek;
-      this.time = time;
-      this.ended = ended;
-      this.replay = replay;
-      this.parts = [];
-      this.offsets = [];
-      this.total = 0;
-      this.partIndex = 0;
-      this.playing = false;
-      this.finished = false;
-      this.raf = 0;
-      this.ignoreSeekInput = false;
-
-      this.video.controls = false;
-      this.video.addEventListener('play', () => { this.playing = true; this.updateButton(); this.startTick(); });
-      this.video.addEventListener('pause', () => { this.playing = false; this.updateButton(); cancelAnimationFrame(this.raf); });
-      this.video.addEventListener('error', () => showError('main.mp4를 불러오지 못했습니다.'));
-
-      this.playButton.addEventListener('click', () => this.toggle());
-      this.replay.addEventListener('click', () => this.restart());
-
-      // 재생바를 움직이는 즉시 실제 video.currentTime도 바뀌므로 화면 프레임도 같이 바뀐다.
-      this.seek.addEventListener('input', async () => {
-        if (this.ignoreSeekInput) return;
-        const wasPlaying = this.playing;
-        this.pause();
-        this.hideEnded();
-        await this.seekVirtual(Number(this.seek.value), false);
-        if (wasPlaying) await this.play();
-      });
-    }
-
-    updateButton() {
-      this.playButton.textContent = this.playing ? '⏸️' : '▶️';
-      this.playButton.setAttribute('aria-label', this.playing ? '일시정지' : '재생');
-    }
-
-    load(parts) {
-      this.pause();
-      this.parts = (parts || [])
-        .map(p => ({ start: Number(p.start), end: Number(p.end) }))
-        .filter(p => validRange(p.start, p.end));
-      this.offsets = [];
-      let acc = 0;
-      this.parts.forEach(p => { this.offsets.push(acc); acc += p.end - p.start; });
-      this.total = acc;
-      this.partIndex = 0;
-      this.finished = false;
-      this.hideEnded();
-      this.seek.min = '0';
-      this.seek.max = String(this.total || 0);
-      this.seek.value = '0';
-      this.updateTime(0);
-      if (this.parts.length) {
-        seekMedia(this.video, this.parts[0].start).catch(() => {});
-      }
-      this.updateButton();
-    }
-
-    pause() {
-      cancelAnimationFrame(this.raf);
-      this.video.pause();
-      this.playing = false;
-      this.updateButton();
-    }
-
-    hideEnded() {
-      this.finished = false;
-      this.ended.classList.remove('show');
-    }
-
-    showEnded() {
-      this.finished = true;
-      this.pause();
-      this.ended.classList.add('show');
-      this.setVirtualPosition(this.total);
-    }
-
-    virtualPosition() {
-      if (!this.parts.length) return 0;
-      const p = this.parts[this.partIndex];
-      const inside = Math.max(0, Math.min(p.end - p.start, this.video.currentTime - p.start));
-      return Math.min(this.total, this.offsets[this.partIndex] + inside);
-    }
-
-    setVirtualPosition(value) {
-      const v = Math.max(0, Math.min(this.total, Number(value) || 0));
-      this.ignoreSeekInput = true;
-      this.seek.value = String(v);
-      this.ignoreSeekInput = false;
-      this.updateTime(v);
-    }
-
-    updateTime(value) {
-      this.time.textContent = `${formatTime(value)} / ${formatTime(this.total)}`;
-    }
-
-    locateVirtual(value) {
-      let v = Math.max(0, Math.min(this.total, Number(value) || 0));
-      if (!this.parts.length) return null;
-      if (v >= this.total) {
-        const last = this.parts.length - 1;
-        return { index: last, source: Math.max(this.parts[last].start, this.parts[last].end - 0.02) };
-      }
-      for (let i = 0; i < this.parts.length; i++) {
-        const len = this.parts[i].end - this.parts[i].start;
-        if (v < this.offsets[i] + len || i === this.parts.length - 1) {
-          return { index: i, source: this.parts[i].start + (v - this.offsets[i]) };
-        }
-      }
-      return null;
-    }
-
-    async seekVirtual(value, autoplay = false) {
-      const loc = this.locateVirtual(value);
-      if (!loc) return;
-      this.partIndex = loc.index;
-      await seekMedia(this.video, loc.source);
-      this.setVirtualPosition(value);
-      this.finished = false;
-      if (autoplay) await this.play();
-    }
-
-    virtualForSource(sourceTime) {
-      const t = Number(sourceTime);
-      for (let i = 0; i < this.parts.length; i++) {
-        const p = this.parts[i];
-        if (t >= p.start - 0.02 && t <= p.end + 0.02) {
-          return this.offsets[i] + Math.max(0, Math.min(p.end - p.start, t - p.start));
-        }
-      }
-      return null;
-    }
-
-    async jumpToSource(sourceTime) {
-      const virtual = this.virtualForSource(sourceTime);
-      if (virtual === null) return false;
-      this.pause();
-      this.hideEnded();
-      await this.seekVirtual(virtual, false);
-      await this.play();
-      return true;
-    }
-
-    async play() {
-      if (!this.parts.length) return;
-      try {
-        await waitMetadata(this.video);
-        if (this.finished || this.virtualPosition() >= this.total - 0.04) {
-          await this.seekVirtual(0, false);
-          this.hideEnded();
-        }
-        const p = this.parts[this.partIndex];
-        if (this.video.currentTime < p.start - 0.05 || this.video.currentTime >= p.end - 0.03) {
-          await seekMedia(this.video, p.start);
-        }
-        await this.video.play();
-        this.playing = true;
-        this.updateButton();
-        this.startTick();
-      } catch (e) {
-        showError('영상을 재생하지 못했습니다. main.mp4 파일을 확인해 주세요.');
-      }
-    }
-
-    toggle() {
-      if (this.playing) this.pause();
-      else this.play();
-    }
-
-    async restart() {
-      this.pause();
-      this.hideEnded();
-      await this.seekVirtual(0, false);
-      await this.play();
-    }
-
-    async nextPartOrFinish() {
-      if (this.partIndex < this.parts.length - 1) {
-        this.partIndex++;
-        await seekMedia(this.video, this.parts[this.partIndex].start);
-        if (this.playing) {
-          try { await this.video.play(); } catch (_) {}
-        }
-      } else {
-        this.showEnded();
-      }
-    }
-
-    startTick() {
-      cancelAnimationFrame(this.raf);
-      const tick = () => {
-        if (!this.playing || !this.parts.length) return;
-        const p = this.parts[this.partIndex];
-        this.setVirtualPosition(this.virtualPosition());
-        if (this.video.currentTime >= p.end - 0.025) {
-          this.nextPartOrFinish();
-          return;
-        }
-        this.raf = requestAnimationFrame(tick);
-      };
-      this.raf = requestAnimationFrame(tick);
-    }
-  }
-
-  const answerPlayer = new SegmentPlayer({
-    video: $('answerVideo'), playButton: $('answerPlay'), seek: $('answerSeek'),
-    time: $('answerTime'), ended: $('answerEnded'), replay: $('answerReplay')
-  });
-
-  const listenPlayer = new SegmentPlayer({
-    video: $('listenVideo'), playButton: $('listenPlay'), seek: $('listenSeek'),
-    time: $('listenTime'), ended: $('listenEnded'), replay: $('listenReplay')
-  });
-
-  async function slide(from, to) {
-    if (transitionBusy) return;
-    transitionBusy = true;
-
-    to.classList.remove('is-hidden');
-    const targetHeight = to.scrollHeight;
-    const currentHeight = from.scrollHeight;
-    flowStage.style.height = `${Math.max(currentHeight, targetHeight)}px`;
-
-    // 레이아웃 반영 후 오른쪽에서 들어오고 기존 화면은 왼쪽으로 나간다.
-    void to.offsetWidth;
-    from.classList.add('exit-left');
-    to.classList.add('enter-right');
-    flowStage.style.height = `${targetHeight}px`;
-
-    await sleep(360);
-    from.classList.add('is-hidden');
-    from.classList.remove('exit-left');
-    to.classList.remove('enter-right');
-    flowStage.style.height = 'auto';
-    transitionBusy = false;
-  }
-
-  function pickQuestion() {
-    if (!allItems.length) return null;
-    if (allItems.length === 1) return allItems[0];
-    let next;
-    do {
-      next = allItems[Math.floor(Math.random() * allItems.length)];
-    } while (current && next === current);
-    return next;
-  }
-
-  async function prepareQuestion() {
-    stopQuestionSound();
-    answerPlayer.pause();
-    current = pickQuestion();
-    if (!current) return;
-    answerInput.value = '';
-    questionEnd = current.questionEnd;
-    updateQuestionButton();
-    await restartQuestionSound();
-  }
-
-  async function startQuiz() {
-    if (!allItems.length) return;
-    showScreen('quiz');
-    answerPanel.classList.add('is-hidden');
-    questionPanel.classList.remove('is-hidden');
-    await prepareQuestion();
-    requestAnimationFrame(() => answerInput.focus());
-  }
-
-  async function checkCurrentAnswer() {
-    if (!current || transitionBusy || answerPanel.classList.contains('is-hidden') === false) return;
-
-    stopQuestionSound();
-    const ok = answerMatches(answerInput.value, current);
-    $('resultTitle').textContent = ok ? '정답입니다! 🎉' : '아쉽지만 틀렸어요.';
-    $('resultTitle').className = `result-title ${ok ? 'correct' : 'wrong'}`;
-    $('correctAnswer').textContent = current.name;
-    $('resultFeature').textContent = current.feature || '';
-
-    answerPlayer.load(current.answerParts);
-    // 확인/Enter의 사용자 입력 직후 재생을 시작해 브라우저 자동재생 차단을 피한다.
-    // 영상은 슬라이드 애니메이션과 함께 오른쪽에서 들어온다.
-    answerPlayer.play();
-    await slide(questionPanel, answerPanel);
-  }
-
-  async function goNextQuestion() {
-    if (!current || transitionBusy || answerPanel.classList.contains('is-hidden')) return;
-    answerPlayer.pause();
-    await prepareQuestion();
-    await slide(answerPanel, questionPanel);
-    requestAnimationFrame(() => answerInput.focus());
-  }
-
-  function buildInstrumentList() {
-    const box = $('instrumentList');
-    box.innerHTML = '';
-    allItems.forEach(item => {
-      const btn = document.createElement('button');
-      btn.type = 'button';
-      btn.textContent = item.name;
-      btn.addEventListener('click', () => openListenItem(item));
-      box.appendChild(btn);
-    });
-  }
-
-  function openListenItem(item) {
-    $('listenName').textContent = item.name;
-    $('listenFeature').textContent = item.feature || '';
-    $('listenModal').classList.add('active');
-    $('listenModal').setAttribute('aria-hidden', 'false');
-    listenPlayer.load(item.answerParts);
-    $('listenJump').dataset.questionStart = String(item.questionStart);
-    $('listenJump').dataset.questionEnd = String(item.questionEnd);
-    listenPlayer.play();
-  }
-
-  function closeListenModal() {
-    listenPlayer.pause();
-    $('listenModal').classList.remove('active');
-    $('listenModal').setAttribute('aria-hidden', 'true');
-  }
-
-  $('startQuiz').addEventListener('click', startQuiz);
-  $('openListen').addEventListener('click', () => showScreen('listen'));
-  document.querySelectorAll('[data-home]').forEach(btn => btn.addEventListener('click', () => showScreen('home')));
-
-  questionPlay.addEventListener('click', toggleQuestionSound);
-  $('questionRestart').innerHTML = ICON_RESTART;
-  $('questionRestart').addEventListener('click', restartQuestionSound);
-  $('checkAnswer').addEventListener('click', checkCurrentAnswer);
-  $('nextQuestion').addEventListener('click', goNextQuestion);
-
-  // 정답 화면과 들어보기 모두 '소리 바로 듣기'를 누르면 현재 플레이어 안에서 문제 구간 위치로 이동하고 재생한다.
-  $('answerJump').addEventListener('click', () => {
-    if (current) answerPlayer.jumpToSource(current.questionStart);
-  });
-  $('listenJump').addEventListener('click', () => {
-    const start = Number($('listenJump').dataset.questionStart);
-    listenPlayer.jumpToSource(start);
-  });
-
-  $('closeListen').addEventListener('click', closeListenModal);
-  $('listenModal').addEventListener('click', e => {
-    if (e.target === $('listenModal')) closeListenModal();
-  });
-
-  // 문제 화면에서는 Enter = 확인, 정답 화면에서는 Enter = 다음.
-  document.addEventListener('keydown', e => {
-    if (e.key !== 'Enter' || !quiz.classList.contains('active') || transitionBusy) return;
-    if (e.isComposing) return;
-    e.preventDefault();
-    if (!questionPanel.classList.contains('is-hidden')) checkCurrentAnswer();
-    else if (!answerPanel.classList.contains('is-hidden')) goNextQuestion();
-  });
-
-  prepareData();
-  buildInstrumentList();
-})();
+const $=id=>document.getElementById(id);
+
+const months=[
+ ["❄️ 겨울의 시작","#7d9db8","#536d84","linear-gradient(160deg,#405b79,#bdc6ce)"],
+ ["❄️ 봄을 기다리는 겨울","#92a6b5","#637987","linear-gradient(160deg,#6b8294,#d4cbc1)"],
+ ["🌱 봄이 오고 있어","#8ebd93","#4d866e","linear-gradient(160deg,#85bce1,#f2d9bd)"],
+ ["🌸 꽃이 피어나는 봄","#8fc58e","#4b936f","linear-gradient(160deg,#8dc9e9,#f7e1ce)"],
+ ["🌿 초록이 짙어져","#80b879","#347957","linear-gradient(160deg,#78bfe8,#f3dfb6)"],
+ ["☀️ 여름이 다가와","#76a86a","#326c4c","linear-gradient(160deg,#5ca9e2,#f1d2a6)"],
+ ["🌞 한여름","#619b58","#285d40","linear-gradient(160deg,#399cdd,#f6cc8d)"],
+ ["🌻 여름의 끝자락","#78975a","#416342","linear-gradient(160deg,#4e9fd7,#eacba5)"],
+ ["🍂 가을이 시작돼","#a6a16d","#65784e","linear-gradient(160deg,#75a9d1,#ecd1ae)"],
+ ["🍁 가을이 깊어져","#b17d52","#81543e","linear-gradient(160deg,#688fb3,#e6bd94)"],
+ ["🎯 목표 날짜가 있는 달","#8d806c","#55564c","linear-gradient(160deg,#526b86,#c3b1a2)"],
+ ["✨ 한 해의 마지막","#8395a4","#4d6175","linear-gradient(160deg,#263a58,#8595a9)"]
+];
+
+const GAME_CONFIG={
+ targetMonth:11,
+ targetDay:3,
+ yearLengthDays:365,
+ secondsPerYear:24,
+ successBonusDays:0,
+ resultTransitionMs:520,
+ startTransitionMs:850,
+ year:2026
+};
+
+const SPECIAL_DAYS={
+ "3-1":{message:"🇰🇷 3월 1일 · 삼일절"},
+ "6-6":{message:"🎗️ 6월 6일 · 현충일"},
+ "8-15":{message:"🇰🇷 8월 15일 · 광복절"},
+ "10-3":{message:"🇰🇷 10월 3일 · 개천절"},
+ "10-9":{message:"✍️ 10월 9일 · 한글날"},
+ "11-3":{message:"📚 11월 3일 · 학생독립운동기념일"}
+};
+
+const startDate=Date.UTC(GAME_CONFIG.year,0,1);
+const totalMs=Date.UTC(GAME_CONFIG.year+1,0,1)-startDate;
+const targetMs=Date.UTC(GAME_CONFIG.year,GAME_CONFIG.targetMonth-1,GAME_CONFIG.targetDay)-startDate;
+
+let running=false,finished=false,simMs=0,lastFrame=0,raf=0,lastShownSpecial="";
+let specialTimer=0,transitionTimer=0;
+const speed=totalMs/(GAME_CONFIG.secondsPerYear*1000);
+
+function render(){
+ const day=Math.min(GAME_CONFIG.yearLengthDays-1,Math.floor(simMs/(totalMs/GAME_CONFIG.yearLengthDays)));
+ const date=new Date(startDate+day*86400000);
+ const m=date.getUTCMonth(),d=date.getUTCDate();
+
+ $("dateBig").innerHTML=`<span class="md"><span>${String(m+1).padStart(2,"0")}</span><span class="slash">.</span><span class="day">${String(d).padStart(2,"0")}</span></span>`;
+ $("hill1").setAttribute("fill",months[m][1]);
+ $("hill2").setAttribute("fill",months[m][2]);
+ $("stage").style.background=months[m][3];
+ $("sun").style.opacity=(m>=4&&m<=7)?1:.65;
+ $("sun").style.background=m>=5&&m<=7?"#fff5c7":"#fff1bd";
+ $("sun").style.boxShadow=m>=5&&m<=7?"0 0 80px #fff0bdcc":"0 0 60px #fff0bdaa";
+
+ $("dateLabel").textContent=
+   running?"날짜가 흐르는 중… 목표일에 멈춰!":
+   finished?"게임이 종료됐어":
+   "시작 버튼을 눌러 시간 흐름 시작";
+
+ const key=`${m+1}-${d}`;
+ if(running&&SPECIAL_DAYS[key]&&key!==lastShownSpecial){
+   lastShownSpecial=key;
+   const toast=$("specialToast");
+   toast.textContent=SPECIAL_DAYS[key].message;
+   toast.classList.add("visible");
+   clearTimeout(specialTimer);
+   specialTimer=setTimeout(()=>toast.classList.remove("visible"),2200);
+ }
+
+ // 목표일에는 날짜 아래에 기념일 이름을 고정 표시
+ if(m+1===GAME_CONFIG.targetMonth&&d===GAME_CONFIG.targetDay){
+   $("dateLabel").innerHTML="📚 学生独立运动纪念日<br>학생독립운동기념일";
+ } else if(running){
+   $("dateLabel").textContent="날짜가 흐르는 중… 목표일에 멈춰!";
+ } else if(!finished){
+   $("dateLabel").textContent="시작 버튼을 눌러 시간 흐름 시작";
+ }
+}
+
+function finish(kind,message){
+ running=false;
+ finished=true;
+ cancelAnimationFrame(raf);
+ clearTimeout(transitionTimer);
+ $("stage").classList.remove("running","transition-bright");
+ $("stage").classList.add("transition-dark");
+ $("dialog").className="dialog "+kind;
+
+ if(kind==="success"){
+   $("emoji").textContent="🎉";
+   $("resultTitle").textContent="성공!";
+   $("resultText").textContent=`정확히 ${GAME_CONFIG.targetMonth}월 ${GAME_CONFIG.targetDay}일에 멈췄어! 날짜 감각이 대단해.`;
+ }else if(kind==="timeout"){
+   $("emoji").textContent="⌛";
+   $("resultTitle").textContent="타임오버";
+   $("resultText").textContent="12월 31일까지 시간이 다 지나갔어. 목표 날짜를 놓쳤어!";
+ }else{
+   $("emoji").textContent="💥";
+   $("resultTitle").textContent="게임 오버 · 실패";
+   $("resultText").textContent=message||"목표 날짜가 아니야. 다음에는 더 정확히 맞춰 봐!";
+ }
+
+ $("overlay").classList.remove("show");
+ transitionTimer=setTimeout(()=> $("overlay").classList.add("show"),GAME_CONFIG.resultTransitionMs);
+}
+
+function frame(now){
+ if(!running)return;
+ if(!lastFrame)lastFrame=now;
+ const delta=Math.min(now-lastFrame,100);
+ lastFrame=now;
+ simMs+=delta*speed;
+
+ if(simMs>=totalMs){
+   simMs=totalMs-1;
+   render();
+   finish("timeout");
+   return;
+ }
+ render();
+ raf=requestAnimationFrame(frame);
+}
+
+function start(){
+ if(running||finished)return;
+ simMs=0;
+ lastFrame=0;
+ lastShownSpecial="";
+ render();
+
+ const stage=$("stage");
+ stage.classList.remove("transition-bright");
+ stage.classList.add("transition-dark");
+ $("intro").classList.add("hidden");
+ running=true;
+ stage.classList.add("running");
+
+ transitionTimer=setTimeout(()=>{
+   if(!running||finished)return;
+   stage.classList.remove("transition-dark");
+   stage.classList.add("transition-bright");
+   transitionTimer=setTimeout(()=>{
+     if(!running||finished)return;
+     raf=requestAnimationFrame(frame);
+   },Math.max(0,GAME_CONFIG.startTransitionMs-300));
+ },300);
+}
+
+function stop(){
+ if(!running||finished)return;
+ const diff=Math.abs(simMs-targetMs);
+ const oneDay=totalMs/GAME_CONFIG.yearLengthDays;
+ const allowedDays=0.45+Math.max(0,GAME_CONFIG.successBonusDays);
+
+ if(diff<=oneDay*allowedDays){
+   simMs=targetMs;
+   render();
+   finish("success");
+ }else{
+   const date=new Date(startDate+Math.max(0,Math.floor(simMs/oneDay))*86400000);
+   finish("fail",`멈춘 날짜는 ${date.getUTCMonth()+1}월 ${date.getUTCDate()}일이야. 목표는 ${GAME_CONFIG.targetMonth}월 ${GAME_CONFIG.targetDay}일이야!`);
+ }
+}
+
+function reset(){
+ running=false;
+ finished=false;
+ simMs=0;
+ lastFrame=0;
+ lastShownSpecial="";
+ cancelAnimationFrame(raf);
+ clearTimeout(specialTimer);
+ clearTimeout(transitionTimer);
+ $("stage").classList.remove("running","transition-dark","transition-bright");
+ $("overlay").classList.remove("show");
+ $("intro").classList.remove("hidden");
+ $("specialToast").classList.remove("visible");
+ render();
+}
+
+$("start").addEventListener("click",e=>{e.stopPropagation();start()});
+$("stopAnywhere").addEventListener("click",stop);
+$("again").addEventListener("click",e=>{e.stopPropagation();reset()});
+$("stage").addEventListener("click",e=>{
+ if(running&&e.target!==$("stopAnywhere"))stop();
+});
+render();
 </script>
 </body>
 </html>
